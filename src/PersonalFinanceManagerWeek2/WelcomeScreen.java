@@ -74,14 +74,14 @@ public class WelcomeScreen extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent ae) {
         if (ae.getSource() == loginButton) {
-            // Open Login screen
+            // Open Login screen (which now has DB logic)
             setVisible(false);
-            dispose(); // Dispose of WelcomeScreen
+            dispose(); 
             new Login(); 
         } else if (ae.getSource() == signupButton) {
-            // Open Signup screen
+            // Open Signup screen (which now has DB logic)
             setVisible(false);
-            dispose(); // Dispose of WelcomeScreen
+            dispose(); 
             new Signup(); 
         }
     }

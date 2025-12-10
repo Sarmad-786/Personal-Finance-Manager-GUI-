@@ -1,8 +1,8 @@
 package PersonalFinanceManagerWeek2;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.*; // Import for Database operations
 
 public class AddIncome extends JFrame implements ActionListener {
     Choice cCategory;
@@ -18,25 +18,26 @@ public class AddIncome extends JFrame implements ActionListener {
     private static final Color ACCENT_GREEN = new Color(0, 150, 0);
     private static final Color ACCENT_BLUE = new Color(30, 100, 255);
     
+    // --- New Global Variables for Account Data ---
+    private int accountId = -1;
+    private String accountName = "N/A";
+    
     AddIncome(String username) {
         this.username = username;
+        
+        // --- Fetch User's First Account for Income Deposit ---
+        fetchDefaultAccount(); 
 
-        // --- Frame Setup ---
+        // --- Frame Setup (Unchanged) ---
         setTitle("Add Income / Deposit");
-        
-        // 1. Set the size (700 wide, 600 high). The position (0, 0) will be ignored later.
         setBounds(0, 0, 700, 600); 
-        
-        // 2. This command forces the frame to the absolute center of the user's screen.
         setLocationRelativeTo(null); 
-        
         setLayout(null);
         getContentPane().setBackground(BG_DARK);
 
-        // --- Centering Calculations (for components) ---
-        // These coordinates already ensure the content is visually centered within the 700px width.
-        int labelX = 150; // X for labels
-        int valueX = 350; // X for input/value fields
+        // --- GUI Component Setup (Unchanged) ---
+        int labelX = 150; 
+        int valueX = 350; 
         int yStart = 70;
         int ySpacing = 40;
 
@@ -64,6 +65,9 @@ public class AddIncome extends JFrame implements ActionListener {
         cCategory.add("Freelance/Project");
         cCategory.add("Investment Return");
         cCategory.add("Gift/Other");
+        // NEW CATEGORY: Loan Repayment or Loan Given
+        cCategory.add("Loan Repayment (Received)");
+        cCategory.add("Loan Given (Payable Asset)"); 
         cCategory.setBounds(valueX, yStart, 200, 20);
         cCategory.setBackground(PANEL_DARK);
         cCategory.setForeground(TEXT_LIGHT);
@@ -94,34 +98,34 @@ public class AddIncome extends JFrame implements ActionListener {
         add(tfSource);
         yStart += ySpacing;
         
-        // 5. ID Type
-        JLabel lblid = createLabel("ID Type", labelX, yStart);
-        add(lblid);
+        // 5. Deposit Account 
+        JLabel lblDepositAccount = createLabel("Deposit Account", labelX, yStart);
+        add(lblDepositAccount);
 
-        labelid = createValueLabel("National ID Card", valueX, yStart); 
+        labelid = createValueLabel(accountName, valueX, yStart); 
+        labelid.setForeground(ACCENT_BLUE); 
         add(labelid);
         yStart += ySpacing;
 
-        // 6. ID Number
-        JLabel lblnumber = createLabel("ID Number", labelX, yStart);
-        add(lblnumber);
+        // 6. Date
+        JLabel lblDate = createLabel("Date (YYYY-MM-DD)", labelX, yStart);
+        add(lblDate);
 
-        labelnumber = createValueLabel("123456789", valueX, yStart);
+        labelnumber = createValueLabel(java.time.LocalDate.now().toString(), valueX, yStart); 
         add(labelnumber);
         yStart += ySpacing;
 
-        // 7. Phone Number
-        JLabel lblphone = createLabel("Phone", labelX, yStart);
-        add(lblphone);
+        // 7. Notes
+        JLabel lblNotes = createLabel("Notes (Optional)", labelX, yStart);
+        add(lblNotes);
 
-        labelphone = createValueLabel("0300-1234567", valueX, yStart);
+        labelphone = createValueLabel("", valueX, yStart); 
         add(labelphone);
         yStart += ySpacing + 20;
 
-        // --- Buttons (Centered below the fields) ---
+        // --- Buttons (Unchanged) ---
         int buttonXStart = 150; 
 
-        // Add Income Button
         addIncome = new JButton("Add Income");
         addIncome.setBackground(ACCENT_GREEN);
         addIncome.setForeground(TEXT_LIGHT);
@@ -129,7 +133,6 @@ public class AddIncome extends JFrame implements ActionListener {
         addIncome.addActionListener(this);
         add(addIncome);
 
-        // Clear Fields Button
         clearFields = new JButton("Clear Fields");
         clearFields.setBackground(ACCENT_BLUE);
         clearFields.setForeground(TEXT_LIGHT);
@@ -137,7 +140,6 @@ public class AddIncome extends JFrame implements ActionListener {
         clearFields.addActionListener(this);
         add(clearFields);
 
-        // Back Button
         back = new JButton("Back");
         back.setBackground(Color.DARK_GRAY);
         back.setForeground(TEXT_LIGHT);
@@ -148,7 +150,35 @@ public class AddIncome extends JFrame implements ActionListener {
         setVisible(true);
     }
     
-    // Helper method for creating standard dark-theme labels
+    // --- DATABASE: Fetch Default Account ---
+    private void fetchDefaultAccount() {
+        ResultSet rs = null;
+        try {
+            Conn c = new Conn();
+            String query = "SELECT account_id, account_name FROM account WHERE username = '"+username+"' ORDER BY account_id LIMIT 1";
+            rs = c.s.executeQuery(query);
+            
+            if (rs.next()) {
+                accountId = rs.getInt("account_id");
+                accountName = rs.getString("account_name");
+            } else {
+                 accountName = "No Account Found!";
+                 JOptionPane.showMessageDialog(this, "No financial account found for this user. Please create one first.", "Setup Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+    // Helper methods (Unchanged)
     private JLabel createLabel(String text, int x, int y) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -157,7 +187,6 @@ public class AddIncome extends JFrame implements ActionListener {
         return label;
     }
 
-    // Helper method for creating standard dark-theme value labels
     private JLabel createValueLabel(String text, int x, int y) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -169,19 +198,57 @@ public class AddIncome extends JFrame implements ActionListener {
 
     public void actionPerformed(ActionEvent ae) {
         if (ae.getSource() == addIncome) {
+            
+            if (accountId == -1) {
+                 JOptionPane.showMessageDialog(null, "Cannot add income: No valid deposit account found.", "Error", JOptionPane.ERROR_MESSAGE);
+                 return;
+            }
+            
+            String amountStr = tfAmount.getText();
+            String category = cCategory.getSelectedItem();
+            String source = tfSource.getText();
+            String date = labelnumber.getText(); 
+            
+            if (amountStr.isEmpty() || source.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Please fill Amount and Source fields.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             try {
-                String category = cCategory.getSelectedItem();
-                String source = tfSource.getText();
-                double amount = Double.parseDouble(tfAmount.getText());
+                double amount = Double.parseDouble(amountStr);
 
                 if (amount <= 0) {
                     JOptionPane.showMessageDialog(null, "Please enter a valid amount greater than zero.", "Input Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                // Simulate saving to a database
-                String message = String.format("Successfully added Rs %.2f to your account!", amount);
-                JOptionPane.showMessageDialog(null, message, "Income Recorded", JOptionPane.INFORMATION_MESSAGE);
+                Conn c = new Conn();
+                double balanceChange;
+                String transType;
+                
+                // --- NEW LOGIC: Check for Asset/Liability transaction ---
+                if (category.equals("Loan Given (Payable Asset)")) {
+                    // This is money leaving your main account (Expense) but creating a receivable Asset (Loan)
+                    transType = "Expense"; // Record as expense from your main account
+                    balanceChange = -amount; // Decrease account balance
+                    category = "Loan Given - " + source; // Modify category for tracking
+                } else {
+                    // Standard Income (e.g., Salary, Gift)
+                    transType = "Income";
+                    balanceChange = amount; // Increase account balance
+                }
+
+                // 1. Insert Transaction 
+                String insertTransaction = "INSERT INTO transaction_record (username, account_id, trans_type, amount, category, payment_method, trans_date, notes) " +
+                                           "VALUES ('"+username+"', "+accountId+", '"+transType+"', "+amount+", '"+category+"', 'Source: "+source+"', '"+date+"', 'Notes: "+source+"')";
+                c.s.executeUpdate(insertTransaction);
+                
+                // 2. Update Account Balance 
+                String updateBalance = "UPDATE account SET current_balance = current_balance + "+balanceChange+" WHERE account_id = "+accountId;
+                c.s.executeUpdate(updateBalance);
+
+                String message = String.format("Successfully recorded Rs %,.2f. Account: %s, Flow: %s", amount, accountName, category);
+                JOptionPane.showMessageDialog(null, message, "Transaction Recorded", JOptionPane.INFORMATION_MESSAGE);
                 
                 // Clear fields after successful recording
                 tfAmount.setText("");
@@ -189,7 +256,11 @@ public class AddIncome extends JFrame implements ActionListener {
 
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Please enter a valid number for Amount.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Database Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+            
         } else if (ae.getSource() == clearFields) {
             tfAmount.setText("");
             tfSource.setText("");
@@ -201,6 +272,6 @@ public class AddIncome extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new AddIncome("Sarmad");
+        new AddIncome("sarmad");
     }
 }

@@ -2,7 +2,7 @@ package PersonalFinanceManagerWeek2;
 import javax.swing.*;
 import java.awt.*; 
 import java.awt.event.*;
-
+import java.sql.*;
 
 public class Signup extends JFrame implements ActionListener{ 
     JButton create , back;
@@ -11,41 +11,37 @@ public class Signup extends JFrame implements ActionListener{
     Choice security;
     
     // Define Professional Colors
-    private static final Color PANEL_ACCENT = new Color(0, 102, 204); // Deep Blue Accent (Used for buttons)
-    private static final Color BG_DARK = Color.BLACK; // Frame background
-    private static final Color PANEL_BG_FORM = new Color(35, 35, 35); // Dark Gray background for form area
-    private static final Color FORM_FIELD_BG = new Color(30, 30, 30); // Dark grey field background
-    private static final Color FORM_BORDER = new Color(80, 80, 80); // Lighter border for fields
-    private static final Color TEXT_LIGHT = Color.WHITE; // White text
+    private static final Color PANEL_ACCENT = new Color(0, 102, 204); 
+    private static final Color BG_DARK = Color.BLACK; 
+    private static final Color PANEL_BG_FORM = new Color(35, 35, 35); 
+    private static final Color FORM_FIELD_BG = new Color(30, 30, 30); 
+    private static final Color FORM_BORDER = new Color(80, 80, 80); 
+    private static final Color TEXT_LIGHT = Color.WHITE; 
 
     Signup(){
-        // 🚨 FIX 1: Adjusted bounds to remove right panel (width 480)
+        // --- GUI Setup (Unchanged) ---
         setBounds(550, 200, 480, 450); 
         getContentPane().setBackground(BG_DARK); 
         setLayout(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
-        // --- 1. Form Container (Now fills the whole frame width) ---
         JPanel p1 = new JPanel();
-        p1.setBackground(PANEL_BG_FORM); // Use the slightly lighter dark grey for the form background
-        p1.setBounds(0, 0, 480, 450); // Fills the entire frame
+        p1.setBackground(PANEL_BG_FORM); 
+        p1.setBounds(0, 0, 480, 450); 
         p1.setLayout(null);
         add(p1);
         
-        // --- 2. Title Label ---
         JLabel title = new JLabel("Create New Account");
         title.setBounds(50, 15, 300, 30);
         title.setFont(new Font("Tahoma", Font.BOLD, 24));
-        title.setForeground(TEXT_LIGHT); // White text
+        title.setForeground(TEXT_LIGHT); 
         p1.add(title);
         
-        
-        // --- 3. Form Fields ---
+        // --- Form Fields ---
         int labelX = 50;
         int fieldX = 190;
-        int fieldWidth = 220; // Slightly increased field width for better aesthetics
+        int fieldWidth = 220; 
 
-        // Username
         JLabel lblusername = new JLabel("Username");
         lblusername.setBounds(labelX,70,125,25);
         lblusername.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -60,7 +56,6 @@ public class Signup extends JFrame implements ActionListener{
         tfusername.setBorder(BorderFactory.createLineBorder(FORM_BORDER)); 
         p1.add(tfusername);
         
-        // Name
         JLabel lblname = new JLabel("Full Name"); 
         lblname.setBounds(labelX,110,125,25);
         lblname.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -75,7 +70,6 @@ public class Signup extends JFrame implements ActionListener{
         tfname.setBorder(BorderFactory.createLineBorder(FORM_BORDER)); 
         p1.add(tfname);
         
-        // Password
         JLabel lblpassword = new JLabel("Password");
         lblpassword.setBounds(labelX,150,125,25);
         lblpassword.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -90,25 +84,22 @@ public class Signup extends JFrame implements ActionListener{
         tfpassword .setBorder(BorderFactory.createLineBorder(FORM_BORDER));
         p1.add(tfpassword );
         
-        // Security Question Label
         JLabel lblsecurity = new JLabel("Security Question");
         lblsecurity.setBounds(labelX,190,140,25); 
         lblsecurity.setFont(new Font("Tahoma", Font.PLAIN, 16));
         lblsecurity.setForeground(TEXT_LIGHT);
         p1.add(lblsecurity);
         
-        // Choice for Security Questions (Dropdown)
         security = new Choice();
         security.add("What is your mother's maiden name?"); 
         security.add("What was your first pet's name?");
         security.add("Your Lucky Number");
         security.add("Your childhood Superhero");
         security.setBounds(fieldX,190,fieldWidth,28); 
-        security.setBackground(FORM_FIELD_BG); // Dark dropdown background
-        security.setForeground(TEXT_LIGHT); // White dropdown text
+        security.setBackground(FORM_FIELD_BG); 
+        security.setForeground(TEXT_LIGHT); 
         p1.add(security);
         
-        // Answer
         JLabel lblanswer = new JLabel("Answer");
         lblanswer.setBounds(labelX,230,125,25);
         lblanswer.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -123,31 +114,22 @@ public class Signup extends JFrame implements ActionListener{
         tfanswer .setBorder(BorderFactory.createLineBorder(FORM_BORDER));
         p1.add(tfanswer );
         
-        // --- Buttons ---
-        
-        // Create Button (Deep Blue filled)
         create = new JButton("Create Account");
         create.setBackground(PANEL_ACCENT);
         create.setForeground(Color.WHITE);
         create.setFont(new Font("Tahoma",Font.BOLD,14));
-        // 🚨 FIX 2: Centered buttons in the 480px frame
-        create.setBounds(70,320,160,35); // Wider button
+        create.setBounds(70,320,160,35); 
         create.addActionListener(this); 
         p1.add(create);
         
-        // Back Button (White filled, Blue border/text)
         back = new JButton("Back to Login");
         back.setBackground(Color.WHITE);
         back.setForeground(PANEL_ACCENT);
         back.setFont(new Font("Tahoma",Font.BOLD,14));
-        // 🚨 FIX 3: Placed next to the Create button
-        back.setBounds(250,320,160,35); // Wider button
+        back.setBounds(250,320,160,35); 
         back.setBorder(BorderFactory.createLineBorder(PANEL_ACCENT)); 
         back.addActionListener(this); 
         p1.add(back);
-        
-        // --- 4. Right Image/Visual Area (REMOVED) ---
-        // The visualSpace panel and its contents are removed.
         
         setVisible(true);
     }
@@ -158,19 +140,41 @@ public class Signup extends JFrame implements ActionListener{
         if(ae.getSource()== create){
             String username = tfusername.getText();
             String name = tfname.getText();
-            String password = tfpassword.getText();
+            String password = new String(tfpassword.getPassword());
             String question = security.getSelectedItem();
             String answer = tfanswer.getText();
             
-            if (username.isEmpty() || password.isEmpty() || name.isEmpty()) {
-                 JOptionPane.showMessageDialog(null, "All fields are required.");
+            if (username.isEmpty() || password.isEmpty() || name.isEmpty() || answer.isEmpty()) {
+                 JOptionPane.showMessageDialog(null, "Please fill all required fields.");
                  return;
             }
             
-            JOptionPane.showMessageDialog(null, "Account Creation Success!");
-            setVisible(false);
-            dispose();
-            new Login(); 
+            try {
+                Conn c = new Conn();
+                
+                // 1. User table mein data daalo
+                String userQuery = "INSERT INTO user (username, name, password, security_q, security_ans) " +
+                                   "VALUES ('" + username + "', '" + name + "', '" + password + "', '" + question + "', '" + answer + "')";
+                c.s.executeUpdate(userQuery);
+                
+                // 2. Default account create karo
+                String accountQuery = "INSERT INTO account (username, account_name, account_type, current_balance) " +
+                                      "VALUES ('" + username + "', 'Primary Savings', 'Savings', 0.00)";
+                c.s.executeUpdate(accountQuery);
+
+                JOptionPane.showMessageDialog(null, "Account Created Successfully! Default Savings Account Added.");
+                setVisible(false);
+                dispose();
+                new Login(); 
+                
+            } catch (SQLException e) {
+                 if (e.getSQLState().startsWith("23")) { // SQLState 23*** is for integrity constraint (e.g., duplicate key)
+                    JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
+                } else {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Error creating account: " + e.getMessage());
+                }
+            }
             
         }else if (ae.getSource()== back){
             setVisible(false);

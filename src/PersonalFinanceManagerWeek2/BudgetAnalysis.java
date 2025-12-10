@@ -2,45 +2,48 @@ package PersonalFinanceManagerWeek2;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D; // Required for drawing rounded rectangles
+import java.awt.geom.RoundRectangle2D;
+import java.sql.*; 
 
 public class BudgetAnalysis extends JFrame implements ActionListener {
     JButton viewDetails, back;
     
-    // Define Dark Theme Colors
+    // Define Dark Theme Colors (Unchanged)
     private static final Color BG_DARK = new Color(25, 25, 25);
     private static final Color PANEL_DARK = new Color(40, 40, 40);
     private static final Color TEXT_LIGHT = Color.WHITE;
-    private static final Color ACCENT_GREEN = new Color(0, 150, 0); // Under Budget
-    private static final Color WARNING_ORANGE = new Color(255, 150, 0); // Close to Budget
-    private static final Color DANGER_RED = new Color(200, 50, 50); // Over Budget
-    private static final Color CHART_FILL_COLOR = new Color(50, 50, 50); // Darker fill for remaining
+    private static final Color ACCENT_GREEN = new Color(0, 150, 0); 
+    private static final Color WARNING_ORANGE = new Color(255, 150, 0); 
+    private static final Color DANGER_RED = new Color(200, 50, 50); 
+    private static final Color CHART_FILL_COLOR = new Color(50, 50, 50); 
 
-    // Dummy Data for Analysis
-    private double totalBudget = 150000.00;
-    private double totalSpending = 135000.00;
-    private String username = "sarmad"; // Placeholder username
+    private double totalBudget = 0.00;
+    private double totalSpending = 0.00;
+    private String username; 
 
-    BudgetAnalysis() {
+    BudgetAnalysis(String username) {
+        this.username = username;
         
-        // --- Frame Setup ---
-        setTitle("Budget vs. Actual Spending Analysis");
+        fetchBudgetAndSpending(); 
+        
+        // --- Frame Setup (Unchanged) ---
+        setTitle("Budget vs. Actual Spending Analysis for " + username);
         setBounds(400, 200, 900, 600);
         setLocationRelativeTo(null); 
         setLayout(null);
         getContentPane().setBackground(BG_DARK); 
         
-        // --- Heading ---
+        // --- Heading (Unchanged) ---
         JLabel text = new JLabel("MONTHLY BUDGET ANALYSIS");
         text.setFont(new Font("Tahoma", Font.BOLD, 24));
         text.setForeground(TEXT_LIGHT);
         text.setBounds(30, 20, 500, 30);
         add(text);
         
-        // --- Left Panel: Summary Metrics ---
+        // --- Left Panel: Summary Metrics (Unchanged, uses updated data) ---
         
         int labelX = 30;
-        int valueX = 200; // 🚨 FIX 1: Reduced valueX from 250 to 200.
+        int valueX = 200; 
         int yStart = 80;
         int ySpacing = 40;
         
@@ -51,14 +54,14 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         add(labelUsername);
         yStart += ySpacing;
         
-        // 2. Total Budget
+        // 2. Total Budget (LIVE DATA)
         JLabel lblBudget = createLabel("Total Budget (Rs)", labelX, yStart);
         add(lblBudget);
         JLabel labelBudget = createValueLabel(String.format("Rs %,.2f", totalBudget), valueX, yStart, WARNING_ORANGE, true);
         add(labelBudget);
         yStart += ySpacing;
         
-        // 3. Total Spending
+        // 3. Total Spending (LIVE DATA)
         JLabel lblSpending = createLabel("Current Spending (Rs)", labelX, yStart);
         add(lblSpending);
         JLabel labelSpending = createValueLabel(String.format("Rs %,.2f", totalSpending), valueX, yStart, DANGER_RED, true);
@@ -81,12 +84,15 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         JLabel lblPercent = createLabel("Budget Usage", labelX, yStart);
         add(lblPercent);
         
-        double percentage = (totalSpending / totalBudget) * 100;
+        double percentage = (totalBudget > 0) ? (totalSpending / totalBudget) * 100 : 0; 
+        // Handle case where totalBudget was placeholder 1.0 (no budget set)
+        if (totalBudget == 1.0 && percentage > 0) percentage = 0;
+        
         JLabel labelPercent = createValueLabel(String.format("%.1f%% Used", percentage), valueX, yStart, TEXT_LIGHT, false); 
         add(labelPercent);
 
         // 6. Status Message
-        int statusY = 350; // Use a dedicated Y position for visual separation
+        int statusY = 350;
         JLabel lblStatus = createLabel("Budget Status", labelX, statusY);
         add(lblStatus);
         
@@ -97,20 +103,17 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
             statusColor = DANGER_RED;
         } else if (percentage >= 85) {
             statusMessage = "Warning: Approaching Limit";
-            statusColor = WARNING_ORANGE; // 🚨 FIX 2: Set color to Warning Orange for consistency
+            statusColor = WARNING_ORANGE; 
         } else {
             statusMessage = "Good: On Track";
             statusColor = ACCENT_GREEN;
         }
         
         JLabel labelStatus = createValueLabel(statusMessage, valueX, statusY, statusColor, true);
-        // 🚨 FIX 3: Explicitly set bounds to ensure it ends before X=400 (400 - 200 = 200px wide space for text)
         labelStatus.setBounds(valueX, statusY, 200, 25); 
         add(labelStatus);
         
-        // --- Buttons ---
-        
-        // View Details Button (Replaces Record Method)
+        // --- Buttons (Unchanged) ---
         viewDetails = new JButton("View Category Details");
         viewDetails.setBounds(50, 480, 200, 40);
         viewDetails.addActionListener(this);
@@ -120,7 +123,6 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         viewDetails.setFocusPainted(false);
         add(viewDetails); 
         
-        // Back Button
         back = new JButton("Back");
         back.setBounds(270, 480, 100, 40);
         back.addActionListener(this);
@@ -130,7 +132,7 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         back.setFocusPainted(false);
         add(back); 
         
-        // --- Right Panel: Budget Progress Visualization ---
+        // --- Right Panel: Budget Progress Visualization (Unchanged) ---
         BudgetBarPanel chartPanel = new BudgetBarPanel(totalBudget, totalSpending);
         chartPanel.setBounds(400, 80, 450, 400);
         add(chartPanel);
@@ -138,7 +140,39 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         setVisible(true);
     }
     
-    // --- Helper Methods ---
+    // --- DATABASE INTEGRATION METHOD (FIXED) ---
+    public void fetchBudgetAndSpending() {
+        try {
+            Conn c = new Conn();
+            
+            // 1. Fetch Total Budget (Uses existing statement c.s)
+            String budgetQuery = "SELECT SUM(target_limit) AS TotalBudget FROM budget WHERE username = '"+username+"'";
+            ResultSet rsBudget = c.s.executeQuery(budgetQuery);
+            if (rsBudget.next()) {
+                totalBudget = rsBudget.getDouble("TotalBudget");
+            }
+            // Close the first ResultSet immediately
+            rsBudget.close(); 
+            
+            // 2. Fetch Total Spending (Reuses c.s, which is now safe since rsBudget is closed)
+            String spendingQuery = "SELECT SUM(amount) AS TotalSpending FROM transaction_record WHERE username = '"+username+"' AND trans_type = 'Expense' AND trans_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)";
+            ResultSet rsSpending = c.s.executeQuery(spendingQuery);
+            if (rsSpending.next()) {
+                totalSpending = rsSpending.getDouble("TotalSpending");
+            }
+            rsSpending.close();
+            
+            // Placeholder budget if totalBudget is genuinely zero (to avoid divide by zero exception in calculations)
+            if (totalBudget <= 0) {
+                 totalBudget = 1.0; 
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error fetching budget data: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    // --- Helper Methods (Unchanged) ---
     private JLabel createLabel(String text, int x, int y) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Tahoma", Font.PLAIN, 16));
@@ -147,16 +181,15 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         return label;
     }
     
-    // Method implementation for createValueLabel
     private JLabel createValueLabel(String text, int x, int y, Color color, boolean isBold) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Tahoma", isBold ? Font.BOLD : Font.PLAIN, 16));
-        label.setBounds(x, y, 250, 25); // Default width
+        label.setBounds(x, y, 250, 25); 
         label.setForeground(color);
         return label;
     }
     
-    // --- Action Listener ---
+    // --- Action Listener (Unchanged) ---
     public void actionPerformed(ActionEvent ae){
         if(ae.getSource() == viewDetails){
             JOptionPane.showMessageDialog(this, "Opening Detailed Spending Report...", "Action", JOptionPane.INFORMATION_MESSAGE);
@@ -166,7 +199,7 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
         }
     }
     
-    // --- Custom JPanel for Budget Bar Visualization ---
+    // --- Custom JPanel for Budget Bar Visualization (Unchanged) ---
     class BudgetBarPanel extends JPanel {
         private double budget;
         private double spending;
@@ -191,6 +224,10 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
             int barY = height / 2 - barHeight / 2;
 
             double ratio = spending / budget;
+            
+            // Correct ratio if budget is the placeholder 1.0
+            if (budget == 1.0) ratio = 0; 
+            
             int progressWidth = (int) (barWidth * Math.min(ratio, 1.0)); 
 
             // Determine color based on usage percentage
@@ -221,13 +258,15 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
             g2d.setColor(TEXT_LIGHT);
             g2d.setFont(new Font("Tahoma", Font.BOLD, 20));
             String percentText = String.format("%.1f%% Used", ratio * 100);
+            if (budget == 1.0) percentText = "N/A (Set Budget First)";
+                
             int textWidth = g2d.getFontMetrics().stringWidth(percentText);
             g2d.drawString(percentText, width / 2 - textWidth / 2, barY + barHeight / 2 + 8);
             
             // 4. Draw labels for Spending and Budget
             g2d.setFont(new Font("Tahoma", Font.PLAIN, 16));
             String spendingLabel = String.format("Spent: Rs %,.0f", spending);
-            String budgetLabel = String.format("Budget: Rs %,.0f", budget);
+            String budgetLabel = (budget == 1.0) ? "Budget: Rs 0" : String.format("Budget: Rs %,.0f", budget);
             
             g2d.setColor(progressColor);
             g2d.drawString(spendingLabel, padding, barY - 15);
@@ -246,6 +285,6 @@ public class BudgetAnalysis extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new BudgetAnalysis(); 
+        new BudgetAnalysis("sarmad"); 
     }
 }

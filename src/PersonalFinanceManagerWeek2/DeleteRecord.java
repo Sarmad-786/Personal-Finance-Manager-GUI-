@@ -2,6 +2,7 @@ package PersonalFinanceManagerWeek2;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.*;
 
 public class DeleteRecord extends JFrame implements ActionListener {
     JButton deleteButton, cancelButton;
@@ -10,17 +11,19 @@ public class DeleteRecord extends JFrame implements ActionListener {
     private static final Color BG_DARK = new Color(25, 25, 25);
     private static final Color PANEL_DARK = new Color(40, 40, 40);
     private static final Color TEXT_LIGHT = Color.WHITE;
-    private static final Color ACCENT_RED = new Color(200, 50, 50); // Danger Red for Delete
+    private static final Color ACCENT_RED = new Color(200, 50, 50); 
     private static final Color WARNING_ORANGE = new Color(255, 150, 0);
 
     // Input fields and selection for deletion
     private JTextField tfRecordId, tfDate;
     private Choice cRecordType;
+    private String globalUsername;
 
     DeleteRecord(String username) {
-        // --- Frame Setup ---
+        this.globalUsername = username;
+        // --- GUI Setup (Unchanged) ---
         setTitle("DELETE FINANCIAL RECORD");
-        setBounds(450, 180, 870, 450); // Reduced height since image is removed
+        setBounds(450, 180, 870, 450); 
         setLocationRelativeTo(null); 
         getContentPane().setBackground(BG_DARK);
         setLayout(null);
@@ -52,7 +55,7 @@ public class DeleteRecord extends JFrame implements ActionListener {
         
         cRecordType = new Choice();
         cRecordType.add("Transaction");
-        cRecordType.add("Income Entry");
+        cRecordType.add("Account");
         cRecordType.add("Goal Entry");
         cRecordType.setBounds(valueX, yStart, 250, 25);
         cRecordType.setBackground(PANEL_DARK);
@@ -61,10 +64,10 @@ public class DeleteRecord extends JFrame implements ActionListener {
         yStart += ySpacing;
         
         // 3. Record ID / Reference
-        JLabel lblRecordId = createLabel("Transaction/Entry ID", labelX, yStart, TEXT_LIGHT, false);
+        JLabel lblRecordId = createLabel("Record ID / Name", labelX, yStart, TEXT_LIGHT, false);
         add(lblRecordId);
         
-        tfRecordId = createTextField("Enter ID (e.g., T12345)", valueX, yStart);
+        tfRecordId = createTextField("Enter ID or Name", valueX, yStart);
         add(tfRecordId);
         yStart += ySpacing;
         
@@ -85,7 +88,6 @@ public class DeleteRecord extends JFrame implements ActionListener {
         
         // --- Buttons ---
         
-        // Delete Button
         deleteButton = new JButton("DELETE NOW");
         deleteButton.setBackground(ACCENT_RED);
         deleteButton.setForeground(TEXT_LIGHT);
@@ -94,7 +96,6 @@ public class DeleteRecord extends JFrame implements ActionListener {
         deleteButton.addActionListener(this); 
         add(deleteButton);
         
-        // Cancel Button (Replaces the old 'Delete' button's functionality)
         cancelButton = new JButton("Cancel");
         cancelButton.setBackground(Color.DARK_GRAY);
         cancelButton.setForeground(TEXT_LIGHT);
@@ -110,7 +111,7 @@ public class DeleteRecord extends JFrame implements ActionListener {
         confirmationPanel.setBounds(550, 80, 280, 300);
         confirmationPanel.setLayout(new GridBagLayout());
         
-        JLabel iconLabel = createLabel("🗑️", 0, 0, TEXT_LIGHT, true); // Emoji placeholder
+        JLabel iconLabel = createLabel("🗑️", 0, 0, TEXT_LIGHT, true); 
         iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 100));
         confirmationPanel.add(iconLabel);
         
@@ -150,17 +151,42 @@ public class DeleteRecord extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent ae){
         if(ae.getSource() == deleteButton){
             String recordType = cRecordType.getSelectedItem();
-            String id = tfRecordId.getText();
+            String idOrName = tfRecordId.getText();
 
             int confirm = JOptionPane.showConfirmDialog(this, 
-                "Are you sure you want to delete the " + recordType + " with ID: " + id + "?\nThis action cannot be undone.", 
+                "Are you sure you want to delete the " + recordType + " identified by: " + idOrName + "?", 
                 "Confirm Permanent Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             
             if (confirm == JOptionPane.YES_OPTION) {
-                // Actual Deletion Logic would go here (Database call)
-                JOptionPane.showMessageDialog(null, recordType + " record deleted successfully (Database skipped).", "Success", JOptionPane.INFORMATION_MESSAGE);
-                setVisible(false);
-                dispose();
+                try {
+                    Conn c = new Conn();
+                    String query = "";
+                    String successMessage = "";
+
+                    if (recordType.equals("Transaction")) {
+                        query = "DELETE FROM transaction_record WHERE transaction_id = '"+idOrName+"' AND username = '"+globalUsername+"'";
+                        successMessage = "Transaction ID " + idOrName + " deleted.";
+                    } else if (recordType.equals("Account")) {
+                        query = "DELETE FROM account WHERE account_name = '"+idOrName+"' AND username = '"+globalUsername+"'";
+                        successMessage = "Account " + idOrName + " deleted.";
+                    } else if (recordType.equals("Goal Entry")) {
+                        query = "DELETE FROM goals WHERE goal_name = '"+idOrName+"' AND username = '"+globalUsername+"'";
+                        successMessage = "Goal " + idOrName + " deleted.";
+                    }
+                    
+                    int deletedRows = c.s.executeUpdate(query);
+                    if (deletedRows > 0) {
+                        JOptionPane.showMessageDialog(null, successMessage, "Success", JOptionPane.INFORMATION_MESSAGE);
+                        setVisible(false);
+                        dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Record not found or ID/Name is incorrect.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Database Error during deletion: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else if (ae.getSource() == cancelButton) {
             setVisible(false);
